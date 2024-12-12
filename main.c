@@ -1,4 +1,8 @@
+#include "gio/gio.h"
+#include "glib.h"
 #include <gtk/gtk.h>
+
+GtkWidget* selected_iso_label;
 
 static void
 print_hello (GtkWidget *widget,
@@ -11,16 +15,43 @@ print_hello (GtkWidget *widget,
 }
 
 static void
+select_file_result(GObject      *source_object,
+         GAsyncResult *res,
+         gpointer      user_data)
+{
+  GFile* my_iso = gtk_file_dialog_open_finish((GtkFileDialog*)source_object,res,NULL);
+  char* my_iso_path = g_file_get_path(my_iso);
+  g_print("chossed\n");
+  g_print(my_iso_path);
+  gtk_label_set_text((GtkLabel*)selected_iso_label,my_iso_path);
+
+}
+
+static void
+choose_iso(GtkWidget *widget,
+             gpointer   data)
+{
+  gtk_file_dialog_set_title((GtkFileDialog*)data,"prufus");
+  gtk_file_dialog_open((GtkFileDialog*)data, NULL, NULL, select_file_result ,NULL);
+  g_print ("Choose your iso\n");
+}
+
+static void
 activate (GtkApplication *app,
           gpointer        user_data)
 {
   GtkWidget *window;
   GtkWidget *button;
+  GtkWidget *choose_iso_button;
   GtkWidget *box;
   GtkWidget* title;
   GtkWidget* description;
   GtkWidget* header_box;
   GtkWidget* action_box;
+  GtkWidget* select_iso_box;
+  
+
+  GtkFileDialog* choose_iso_dialog;
 
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "prufus");
@@ -38,12 +69,20 @@ activate (GtkApplication *app,
   gtk_widget_set_halign (action_box, GTK_ALIGN_END);
   gtk_widget_set_valign (action_box, GTK_ALIGN_END);
 
+  select_iso_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 30);
+  gtk_widget_set_halign (select_iso_box, GTK_ALIGN_START);
+  gtk_widget_set_valign (select_iso_box, GTK_ALIGN_START);
 
   gtk_window_set_child (GTK_WINDOW (window), box);
 
 
+  choose_iso_dialog = gtk_file_dialog_new();
+
+  selected_iso_label = gtk_label_new("None .iso selected");
+
   //create UI
   button = gtk_button_new_with_label ("Create booteable USB");
+  choose_iso_button = gtk_button_new_with_label ("Select .iso");
 
   title = gtk_label_new("prufus");
   PangoAttrList *const Attrs = pango_attr_list_new();
@@ -54,14 +93,19 @@ activate (GtkApplication *app,
   description = gtk_label_new("Create booteable USB from .iso images");
 
   g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
+  g_signal_connect (choose_iso_button, "clicked", G_CALLBACK (choose_iso), choose_iso_dialog);
   
   gtk_box_append (GTK_BOX (box), header_box);
 
   gtk_box_append (GTK_BOX (header_box), title);
   gtk_box_append (GTK_BOX (header_box), description);
   gtk_box_append (GTK_BOX (action_box), button);
+  gtk_box_append (GTK_BOX (select_iso_box), selected_iso_label);
+  gtk_box_append (GTK_BOX (select_iso_box), choose_iso_button);
+  gtk_box_append (GTK_BOX (box), select_iso_box);
   gtk_box_append (GTK_BOX (box), action_box);
 
+  gtk_window_set_resizable(GTK_WINDOW(window),FALSE);
   gtk_window_present (GTK_WINDOW (window));
 }
 
