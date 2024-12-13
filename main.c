@@ -1,8 +1,8 @@
-#include "gio/gio.h"
-#include "glib.h"
 #include <gtk/gtk.h>
 
+char buffer_disk_name[128];
 GtkWidget* selected_iso_label;
+GtkWidget* disk_label;
 
 static void
 print_hello (GtkWidget *widget,
@@ -49,6 +49,11 @@ activate (GtkApplication *app,
   GtkWidget* header_box;
   GtkWidget* action_box;
   GtkWidget* select_iso_box;
+
+  GtkWidget* select_iso_drop_down;
+
+  GtkWidget* separator;
+
   
 
   GtkFileDialog* choose_iso_dialog;
@@ -57,7 +62,7 @@ activate (GtkApplication *app,
   gtk_window_set_title (GTK_WINDOW (window), "prufus");
   gtk_window_set_default_size (GTK_WINDOW (window), 500, 650);
 
-  box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+  box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
   gtk_widget_set_halign (box, GTK_ALIGN_FILL);
   gtk_widget_set_valign (box, GTK_ALIGN_FILL);
 
@@ -69,16 +74,24 @@ activate (GtkApplication *app,
   gtk_widget_set_halign (action_box, GTK_ALIGN_END);
   gtk_widget_set_valign (action_box, GTK_ALIGN_END);
 
-  select_iso_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 30);
-  gtk_widget_set_halign (select_iso_box, GTK_ALIGN_START);
-  gtk_widget_set_valign (select_iso_box, GTK_ALIGN_START);
+  select_iso_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_halign (select_iso_box, GTK_ALIGN_FILL);
+  gtk_widget_set_valign (select_iso_box, GTK_ALIGN_FILL);
 
   gtk_window_set_child (GTK_WINDOW (window), box);
+
+  
+  separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
 
 
   choose_iso_dialog = gtk_file_dialog_new();
 
+  select_iso_drop_down = gtk_drop_down_new(NULL, NULL);
+  gtk_drop_down_set_factory(GTK_DROP_DOWN(select_iso_drop_down), NULL);
+
   selected_iso_label = gtk_label_new("None .iso selected");
+  
+  disk_label = gtk_label_new(buffer_disk_name);
 
   //create UI
   button = gtk_button_new_with_label ("Create booteable USB");
@@ -100,13 +113,51 @@ activate (GtkApplication *app,
   gtk_box_append (GTK_BOX (header_box), title);
   gtk_box_append (GTK_BOX (header_box), description);
   gtk_box_append (GTK_BOX (action_box), button);
-  gtk_box_append (GTK_BOX (select_iso_box), selected_iso_label);
+  
   gtk_box_append (GTK_BOX (select_iso_box), choose_iso_button);
+  gtk_box_append (GTK_BOX (select_iso_box), selected_iso_label);
+
   gtk_box_append (GTK_BOX (box), select_iso_box);
+
+  
+  GtkWidget* box_disk = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); 
+  
+  GtkWidget* separator_disk1 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+  GtkWidget* box_disk_label = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
+  gtk_box_append (GTK_BOX (box_disk_label), separator_disk1);
+
+  gtk_box_append (GTK_BOX (box_disk_label), disk_label);
+  GtkWidget* separator_disk2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+  gtk_box_append (GTK_BOX (box_disk_label), separator_disk2);
+
+
+  GtkWidget* disk_button = gtk_button_new_with_label("Change destination USB");
+  gtk_box_append (GTK_BOX (box_disk), disk_button);
+  gtk_box_append (GTK_BOX (box_disk), box_disk_label);
+
+
+  gtk_box_append (GTK_BOX (box), box_disk);
+
+  //gtk_box_append (GTK_BOX (box), select_iso_drop_down);
   gtk_box_append (GTK_BOX (box), action_box);
 
   gtk_window_set_resizable(GTK_WINDOW(window),FALSE);
   gtk_window_present (GTK_WINDOW (window));
+}
+
+void get_usb_disk(){
+    FILE *fp = popen("fdisk -l | grep Disk | grep /dev/sd", "r");
+
+    if (fp == NULL) {
+        perror("popen failed");
+    }
+
+    while (fgets(buffer_disk_name, sizeof(buffer_disk_name), fp) != NULL) {
+        printf("%s", buffer_disk_name);
+    }
+
+    pclose(fp);
+    
 }
 
 int
@@ -115,6 +166,9 @@ main (int    argc,
 {
   GtkApplication *app;
   int status;
+
+  get_usb_disk();
+
 
   app = gtk_application_new ("org.gtk.prufus", G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
