@@ -1,6 +1,11 @@
 #include <gtk/gtk.h>
 
-char buffer_disk_name[128];
+typedef struct Disk{
+  char name[40];
+  char device[20];
+} Disk;
+
+char buffer_disk_name[1024];
 GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
 
@@ -146,7 +151,7 @@ activate (GtkApplication *app,
 }
 
 void get_usb_disk(){
-    FILE *fp = popen("fdisk -l | grep Disk | grep /dev/sd", "r");
+    FILE *fp = popen("fdisk -l", "r");
 
     if (fp == NULL) {
         perror("popen failed");
