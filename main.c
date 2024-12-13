@@ -1,13 +1,22 @@
 #include <gtk/gtk.h>
+#include <string.h>
 
 typedef struct Disk{
   char name[40];
   char device[20];
+  char size[20];
 } Disk;
 
-char buffer_disk_name[1024];
+char buffer_disk_name[128];
 GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
+
+Disk disks[10];
+int disk_counter = 0;
+#define NAME    1
+#define DEVICE  2
+#define SIZE    3
+#define DEVICE_COUNT    4
 
 static void
 print_hello (GtkWidget *widget,
@@ -150,19 +159,85 @@ activate (GtkApplication *app,
   gtk_window_present (GTK_WINDOW (window));
 }
 
-void get_usb_disk(){
-    FILE *fp = popen("fdisk -l", "r");
+void get_string(int type){
+    char buffer[256];
+    memset(buffer,0,sizeof(buffer));
+    int counter = 0;
+    int local_disk_counter = 0;
 
-    if (fp == NULL) {
-        perror("popen failed");
-    }
-
-    while (fgets(buffer_disk_name, sizeof(buffer_disk_name), fp) != NULL) {
-        printf("%s", buffer_disk_name);
-    }
-
-    pclose(fp);
     
+    int offset = 0;
+    for(int i = 0 ; ;i++){
+      if(buffer_disk_name[i] == '\0')
+        break;
+      if(buffer_disk_name[i] != '\n'){
+        buffer[counter] = buffer_disk_name[i];
+        counter++; 
+      }else {
+        if(type == NAME){
+          memcpy(disks[local_disk_counter].name, buffer, counter);
+          offset += counter;
+        }else if(type == DEVICE){
+          memcpy(disks[local_disk_counter].device, buffer, counter);
+        }else if(type == SIZE){
+          memcpy(disks[local_disk_counter].size, buffer, counter);
+        }
+        local_disk_counter++;
+        if(type == DEVICE_COUNT){
+          disk_counter++;
+        }
+        counter = 0;
+      }
+    }
+  
+}
+
+void get_string_from_file(FILE *script_file) {
+  memset(buffer_disk_name, 0, sizeof(buffer_disk_name));
+  char buffer[128];
+  memset(buffer,0,sizeof(buffer));
+  int offset = 0;
+  while (fgets(buffer, sizeof(buffer), script_file) !=
+         NULL) {
+
+    int len = strlen(buffer);
+    memcpy(&buffer_disk_name[offset], buffer, len);
+    offset += len;
+  }
+  
+}
+
+void get_usb_disk(){
+    FILE *script_file;
+    script_file = popen("./get_device_name.sh", "r");
+
+    get_string_from_file(script_file); 
+    get_string(NAME);
+
+    pclose(script_file);
+  
+
+    script_file = popen("./get_devices.sh", "r");
+
+    get_string_from_file(script_file); 
+    get_string(DEVICE);
+    pclose(script_file);
+
+    script_file = popen("./get_sizes.sh", "r");
+
+    get_string_from_file(script_file); 
+    get_string(SIZE);
+
+    get_string(DEVICE_COUNT);
+
+    pclose(script_file);
+     
+
+    for(int i = 0; i< disk_counter; i++){
+      printf("%s %s %s\n",disks[i].name, disks[i].size, disks[i].device);
+    }
+
+    while(1){};
 }
 
 int
