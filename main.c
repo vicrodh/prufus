@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <stdio.h>
 #include <string.h>
 
 typedef struct Disk{
@@ -7,7 +8,13 @@ typedef struct Disk{
   char size[20];
 } Disk;
 
+
+char* devices[10];
+
 char buffer_disk_name[128];
+
+char buffer_disk_full_name[60*10];
+
 GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
 
@@ -105,7 +112,7 @@ activate (GtkApplication *app,
 
   selected_iso_label = gtk_label_new("None .iso selected");
   
-  disk_label = gtk_label_new(buffer_disk_name);
+  //disk_label = gtk_label_new(buffer_disk_name);
 
   //create UI
   button = gtk_button_new_with_label ("Create booteable USB");
@@ -118,6 +125,17 @@ activate (GtkApplication *app,
   gtk_label_set_attributes((GtkLabel*)title,Attrs);
 
   description = gtk_label_new("Create booteable USB from .iso images");
+
+  int offset = 0;
+  for (int i = 0; i < disk_counter; i++) {
+    devices[i] = buffer_disk_full_name + offset;
+    offset += 60;
+  }
+  GtkWidget* devices_drop_down = gtk_drop_down_new_from_strings((const char* const*)devices);
+
+
+
+
 
   g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
   g_signal_connect (choose_iso_button, "clicked", G_CALLBACK (choose_iso), choose_iso_dialog);
@@ -140,7 +158,7 @@ activate (GtkApplication *app,
   GtkWidget* box_disk_label = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
   gtk_box_append (GTK_BOX (box_disk_label), separator_disk1);
 
-  gtk_box_append (GTK_BOX (box_disk_label), disk_label);
+  //gtk_box_append (GTK_BOX (box_disk_label), disk_label);
   GtkWidget* separator_disk2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_box_append (GTK_BOX (box_disk_label), separator_disk2);
 
@@ -151,6 +169,7 @@ activate (GtkApplication *app,
 
 
   gtk_box_append (GTK_BOX (box), box_disk);
+  gtk_box_append (GTK_BOX (box), devices_drop_down);
 
   //gtk_box_append (GTK_BOX (box), select_iso_drop_down);
   gtk_box_append (GTK_BOX (box), action_box);
@@ -236,8 +255,15 @@ void get_usb_disk(){
     for(int i = 0; i< disk_counter; i++){
       printf("%s %s %s\n",disks[i].name, disks[i].size, disks[i].device);
     }
+  
 
-    while(1){};
+    int offset = 0;
+    for(int i = 0; i < disk_counter; i++){
+      sprintf(buffer_disk_full_name+offset, "%s %s", disks[i].name,disks[i].size);
+      offset += 60;
+    }
+
+
 }
 
 int
