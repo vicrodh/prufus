@@ -42,10 +42,10 @@ static void make_usb (GtkWidget *widget, gpointer data)
 
   pid_t pid;
   GError *error_open = NULL;
-  char *command[] = {"/root/prufus/make_usb.sh", make_usb_data.iso_path,NULL};
+  char *command[] = {"./make_usb.sh", make_usb_data.iso_path,NULL};
   char *env[] = {(char*)0};
-  gboolean result = g_spawn_async("/",command,env,
-      G_SPAWN_CHILD_INHERITS_STDIN,NULL,NULL,&pid,&error_open);
+  gboolean result = g_spawn_async(NULL,command,env,
+      G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,NULL,NULL,&pid,&error_open);
   if(!result){
     g_print ("can't execute\n");
     if(error_open != NULL){
@@ -58,9 +58,7 @@ static void make_usb (GtkWidget *widget, gpointer data)
 }
 
 static void
-select_file_result(GObject      *source_object,
-         GAsyncResult *res,
-         gpointer      user_data)
+select_file_result(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
   GFile* my_iso = gtk_file_dialog_open_finish((GtkFileDialog*)source_object,res,NULL);
   char* my_iso_path = g_file_get_path(my_iso);
@@ -68,22 +66,19 @@ select_file_result(GObject      *source_object,
   memcpy(make_usb_data.iso_path, my_iso_path, iso_path_len);
   g_print("chossed\n");
   g_print(make_usb_data.iso_path);
+  g_print("\n");
   gtk_label_set_text((GtkLabel*)selected_iso_label,my_iso_path);
 
 }
 
-static void
-choose_iso(GtkWidget *widget,
-             gpointer   data)
+static void choose_iso(GtkWidget *widget, gpointer data)
 {
   gtk_file_dialog_set_title((GtkFileDialog*)data,"prufus");
   gtk_file_dialog_open((GtkFileDialog*)data, NULL, NULL, select_file_result ,NULL);
   g_print ("Choose your iso\n");
 }
 
-static void
-activate (GtkApplication *app,
-          gpointer        user_data)
+static void create_user_interface (GtkApplication *app, gpointer user_data)
 {
   GtkWidget *window;
   GtkWidget *button;
@@ -192,7 +187,7 @@ activate (GtkApplication *app,
 
 
   GtkWidget* disk_button = gtk_button_new_with_label("Change destination USB");
-  gtk_box_append (GTK_BOX (box_disk), disk_button);
+  //gtk_box_append (GTK_BOX (box_disk), disk_button);
   gtk_box_append (GTK_BOX (box_disk), box_disk_label);
 
 
@@ -254,7 +249,7 @@ void get_string_from_file(FILE *script_file) {
   
 }
 
-void get_usb_disk(){
+void get_usb_disks(){
     FILE *script_file;
     script_file = popen("./get_device_name.sh", "r");
 
@@ -294,20 +289,24 @@ void get_usb_disk(){
 
 }
 
-int
-main (int    argc,
-      char **argv)
+int main(int arguments_count, char **arguments_value)
 {
-  GtkApplication *app;
+  GtkApplication *prufus_application;
+
   int status;
 
-  get_usb_disk();
+  get_usb_disks();
 
+  prufus_application = 
+    gtk_application_new ("org.gtk.prufus", G_APPLICATION_DEFAULT_FLAGS);
 
-  app = gtk_application_new ("org.gtk.prufus", G_APPLICATION_DEFAULT_FLAGS);
-  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-  status = g_application_run (G_APPLICATION (app), argc, argv);
-  g_object_unref (app);
+  g_signal_connect(prufus_application, "activate", 
+      G_CALLBACK (create_user_interface), NULL);
+
+  status = g_application_run(G_APPLICATION (prufus_application), 
+      arguments_count, arguments_value);
+
+  g_object_unref (prufus_application);
 
   return status;
 }
