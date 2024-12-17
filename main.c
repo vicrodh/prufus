@@ -21,6 +21,7 @@ char buffer_disk_full_name[60*10];
 
 GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
+GtkWidget* devices_drop_down;
 
 Disk disks[10];
 int disk_counter = 0;
@@ -40,9 +41,18 @@ static void make_usb (GtkWidget *widget, gpointer data)
 {
   g_print ("Creating booteable USB....\n");
 
+  guint select_device_index = 
+    gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
+
+  printf("Selected id %d\n",select_device_index);
+
+
   pid_t pid;
   GError *error_open = NULL;
-  char *command[] = {"./make_usb.sh", make_usb_data.iso_path,NULL};
+  char *command[] = 
+    {"./make_usb.sh", make_usb_data.iso_path,
+      disks[select_device_index].device,NULL};
+
   char *env[] = {(char*)0};
   gboolean result = g_spawn_async(NULL,command,env,
       G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,NULL,NULL,&pid,&error_open);
@@ -54,7 +64,6 @@ static void make_usb (GtkWidget *widget, gpointer data)
     }
   }
 
-  g_print ("You can disconnect your USB now\n");
 }
 
 static void
@@ -149,14 +158,15 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
 
   description = gtk_label_new("Create booteable USB from .iso images");
 
+
+  //create drop down with devices names and sizes
   int offset = 0;
   for (int i = 0; i < disk_counter; i++) {
     devices[i] = buffer_disk_full_name + offset;
     offset += 60;
   }
-  GtkWidget* devices_drop_down = gtk_drop_down_new_from_strings((const char* const*)devices);
 
-
+  devices_drop_down = gtk_drop_down_new_from_strings((const char* const*)devices);
 
 
 
