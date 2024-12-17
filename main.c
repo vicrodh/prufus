@@ -48,27 +48,40 @@ static MakeUSB make_usb_data;
 static void
 begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-  
-  int result = gtk_alert_dialog_choose_finish(user_data,res,NULL);
-  if(result == 0){
+
+  int result = gtk_alert_dialog_choose_finish(user_data, res, NULL);
+  if (result == 0) {
+    guint select_device_index =
+        gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
     g_print("Formating....\n");
-  }else{
+    pid_t pid;
+    GError *error_open = NULL;
+    char *command[] = {"./make_usb.sh", make_usb_data.iso_path,
+                       valid_disks[select_device_index].device, NULL};
+
+    char *env[] = {(char *)0};
+    gboolean result = g_spawn_async(
+        NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
+        NULL, NULL, &pid, &error_open);
+    if (!result) {
+      g_print("can't execute\n");
+      if (error_open != NULL) {
+        g_print("error executing %s\n", error_open->message);
+        g_error_free(error_open);
+      }
+    }
+
+  } else {
     g_print("Choose other option\n");
   }
-
-
 }
 
 static void make_usb (GtkWidget *widget, gpointer data)
 {
   
 
-  g_print ("Creating booteable USB....\n");
-
   guint select_device_index = 
     gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
-
-  printf("Selected id %d\n",select_device_index);
 
   GtkAlertDialog *write_usb_warning = gtk_alert_dialog_new(
       "WARNING! All data will be lost\n ISO Image: %s\n USB: %s %s",
@@ -84,23 +97,6 @@ static void make_usb (GtkWidget *widget, gpointer data)
   gtk_alert_dialog_choose(write_usb_warning,
       GTK_WINDOW(window),NULL, begin_usb_creation, write_usb_warning);
 
-
-  pid_t pid;
-  GError *error_open = NULL;
-  char *command[] = 
-    {"./make_usb.sh", make_usb_data.iso_path,
-      valid_disks[select_device_index].device,NULL};
-
-  char *env[] = {(char*)0};
-  gboolean result = g_spawn_async(NULL,command,env,
-      G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,NULL,NULL,&pid,&error_open);
-  if(!result){
-    g_print ("can't execute\n");
-    if(error_open != NULL){
-      g_print("error executing %s\n",error_open->message);
-      g_error_free(error_open);
-    }
-  }
 
 }
 
@@ -302,7 +298,7 @@ void get_string_from_file(FILE *script_file) {
 
 void get_usb_disks(){
     FILE *script_file;
-    script_file = popen("./get_device_name.sh", "r");
+    script_file = popen("/root/prufus/get_device_name.sh", "r");
 
     get_string_from_file(script_file); 
     get_string(NAME);
@@ -310,13 +306,13 @@ void get_usb_disks(){
     pclose(script_file);
   
 
-    script_file = popen("./get_devices.sh", "r");
+    script_file = popen("/root/prufus/get_devices.sh", "r");
 
     get_string_from_file(script_file); 
     get_string(DEVICE);
     pclose(script_file);
 
-    script_file = popen("./get_sizes.sh", "r");
+    script_file = popen("/root/prufus/get_sizes.sh", "r");
 
     get_string_from_file(script_file); 
     get_string(SIZE);
