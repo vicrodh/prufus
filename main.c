@@ -13,22 +13,26 @@ typedef struct Disk{
 } Disk;
 
 
-char* devices[10];
+char* devices_info[10];
 
 char buffer_disk_name[128];
 
-char buffer_disk_full_name[60*10];
+char buffer_disks_info[60*10];
 
 GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
 GtkWidget* devices_drop_down;
 
 Disk disks[10];
+Disk valid_disks[10];
+
 int disk_counter = 0;
 #define NAME    1
 #define DEVICE  2
 #define SIZE    3
 #define DEVICE_COUNT    4
+
+#define DISKS_INFO_OFFSET 60
 
 typedef struct MakeUSB{
   char* device;
@@ -51,7 +55,7 @@ static void make_usb (GtkWidget *widget, gpointer data)
   GError *error_open = NULL;
   char *command[] = 
     {"./make_usb.sh", make_usb_data.iso_path,
-      disks[select_device_index].device,NULL};
+      valid_disks[select_device_index].device,NULL};
 
   char *env[] = {(char*)0};
   gboolean result = g_spawn_async(NULL,command,env,
@@ -72,6 +76,10 @@ select_file_result(GObject *source_object, GAsyncResult *res, gpointer user_data
   GFile* my_iso = gtk_file_dialog_open_finish((GtkFileDialog*)source_object,res,NULL);
   char* my_iso_path = g_file_get_path(my_iso);
   int iso_path_len = strlen(my_iso_path);
+
+  //clean iso path firstly
+  memset(make_usb_data.iso_path,0,sizeof(make_usb_data.iso_path));
+
   memcpy(make_usb_data.iso_path, my_iso_path, iso_path_len);
   g_print("chossed\n");
   g_print(make_usb_data.iso_path);
@@ -162,11 +170,11 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   //create drop down with devices names and sizes
   int offset = 0;
   for (int i = 0; i < disk_counter; i++) {
-    devices[i] = buffer_disk_full_name + offset;
-    offset += 60;
+    devices_info[i] = buffer_disks_info + offset;
+    offset += DISKS_INFO_OFFSET;//it's a constant offset defined
   }
 
-  devices_drop_down = gtk_drop_down_new_from_strings((const char* const*)devices);
+  devices_drop_down = gtk_drop_down_new_from_strings((const char* const*)devices_info);
 
 
 
@@ -288,12 +296,56 @@ void get_usb_disks(){
     for(int i = 0; i< disk_counter; i++){
       printf("%s %s %s\n",disks[i].name, disks[i].size, disks[i].device);
     }
-  
+    
+    //filters disks
+    int valid_disks_counter = 0;
+    bool has_m2 = false;
+
+    for(int i = 0; i< disk_counter; i++){
+      if(strncmp(disks[i].device, "/dev/nv",7) == 0){
+        has_m2 = true;
+      }
+    }
+    
+    memset(&valid_disks,0,sizeof(valid_disks));
+
+
+    //if has m2 disk we suppose we have USBs in /dev/sd* unless some other SATA disk
+    if (has_m2) {
+
+      for (int i = 0; i < disk_counter; i++) {
+        if (strncmp(disks[i].device, "/dev/sd", 7) == 0) {
+          Disk* valid_disk = &disks[i];
+          memcpy(&valid_disks[valid_disks_counter], valid_disk, sizeof(Disk));
+          valid_disks_counter++;
+          printf("Valid disk: %s\n",disks[i].device); 
+        }
+      }
+    }else{//not tested but if not has m2 we suppose the main disk it's /dev/sda
+      for (int i = 0; i < disk_counter; i++) {
+        if (strncmp(disks[i].device, "/dev/sda", 7) != 0) {
+          Disk* valid_disk = &disks[i];
+          memcpy(&valid_disks[valid_disks_counter], valid_disk, sizeof(Disk));
+          valid_disks_counter++;
+          printf("Valid disk: %s\n",disks[i].device); 
+        }
+      }
+
+    }
+
+    printf("Valid disks %d\n",valid_disks_counter); 
+
+    for(int i = 0; i< valid_disks_counter; i++){
+      printf("%s %s %s\n",valid_disks[i].name, 
+          valid_disks[i].size, valid_disks[i].device);
+    }
+
+    disk_counter = valid_disks_counter;
 
     int offset = 0;
     for(int i = 0; i < disk_counter; i++){
-      sprintf(buffer_disk_full_name+offset, "%s %s", disks[i].name,disks[i].size);
-      offset += 60;
+      sprintf(buffer_disks_info+offset, "%s %s", valid_disks[i].name,valid_disks[i].size);
+      offset += DISKS_INFO_OFFSET;
     }
 
 
