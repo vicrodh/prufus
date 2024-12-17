@@ -1,3 +1,5 @@
+#include "gio/gio.h"
+#include "glib-object.h"
 #include "glib.h"
 #include <gtk/gtk.h>
 #include <stdio.h>
@@ -22,6 +24,7 @@ char buffer_disks_info[60*10];
 GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
 GtkWidget* devices_drop_down;
+GtkWidget *window;
 
 Disk disks[10];
 Disk valid_disks[10];
@@ -41,14 +44,45 @@ typedef struct MakeUSB{
 
 static MakeUSB make_usb_data;
 
+
+static void
+begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+  
+  int result = gtk_alert_dialog_choose_finish(user_data,res,NULL);
+  if(result == 0){
+    g_print("Formating....\n");
+  }else{
+    g_print("Choose other option\n");
+  }
+
+
+}
+
 static void make_usb (GtkWidget *widget, gpointer data)
 {
+  
+
   g_print ("Creating booteable USB....\n");
 
   guint select_device_index = 
     gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
 
   printf("Selected id %d\n",select_device_index);
+
+  GtkAlertDialog *write_usb_warning = gtk_alert_dialog_new(
+      "WARNING! All data will be lost\n ISO Image: %s\n USB: %s %s",
+      make_usb_data.iso_path,valid_disks[select_device_index].name, 
+      valid_disks[select_device_index].size);
+  
+  const char * const dialog_buttons[] = {"I'm sure", "Cancel",NULL};
+
+  gtk_alert_dialog_set_buttons(write_usb_warning,dialog_buttons);
+
+
+
+  gtk_alert_dialog_choose(write_usb_warning,
+      GTK_WINDOW(window),NULL, begin_usb_creation, write_usb_warning);
 
 
   pid_t pid;
@@ -97,7 +131,6 @@ static void choose_iso(GtkWidget *widget, gpointer data)
 
 static void create_user_interface (GtkApplication *app, gpointer user_data)
 {
-  GtkWidget *window;
   GtkWidget *button;
   GtkWidget *choose_iso_button;
   GtkWidget *box;
