@@ -1,6 +1,9 @@
+#include "glib.h"
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 typedef struct Disk{
   char name[40];
@@ -30,8 +33,21 @@ print_hello (GtkWidget *widget,
              gpointer   data)
 {
   g_print ("Creating booteable USB....\n");
-  sleep(2);
-  g_print ("Success\n");
+
+  pid_t pid;
+  GError *error_open = NULL;
+  char *command[] = {"/root/prufus/make_usb.sh", "/dev/sda",NULL};
+  char *env[] = {(char*)0};
+  gboolean result = g_spawn_async("/",command,env,
+      G_SPAWN_CHILD_INHERITS_STDIN,NULL,NULL,&pid,&error_open);
+  if(!result){
+    g_print ("can't execute\n");
+    if(error_open != NULL){
+      g_print("error executing %s\n",error_open->message);
+      g_error_free(error_open);
+    }
+  }
+
   g_print ("You can disconnect your USB now\n");
 }
 
@@ -79,6 +95,9 @@ activate (GtkApplication *app,
 
   GtkFileDialog* choose_iso_dialog;
 
+  GtkFileFilter* iso_filter = gtk_file_filter_new();
+  gtk_file_filter_add_suffix(iso_filter, "iso");
+
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "prufus");
   gtk_window_set_default_size (GTK_WINDOW (window), 500, 650);
@@ -106,6 +125,7 @@ activate (GtkApplication *app,
 
 
   choose_iso_dialog = gtk_file_dialog_new();
+  gtk_file_dialog_set_default_filter(choose_iso_dialog,iso_filter);
 
   select_iso_drop_down = gtk_drop_down_new(NULL, NULL);
   gtk_drop_down_set_factory(GTK_DROP_DOWN(select_iso_drop_down), NULL);
