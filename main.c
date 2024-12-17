@@ -5,6 +5,7 @@
 #include <time.h>
 #include <unistd.h>
 
+
 typedef struct Disk{
   char name[40];
   char device[20];
@@ -28,15 +29,20 @@ int disk_counter = 0;
 #define SIZE    3
 #define DEVICE_COUNT    4
 
-static void
-print_hello (GtkWidget *widget,
-             gpointer   data)
+typedef struct MakeUSB{
+  char* device;
+  char iso_path[100];
+} MakeUSB ;
+
+static MakeUSB make_usb_data;
+
+static void make_usb (GtkWidget *widget, gpointer data)
 {
   g_print ("Creating booteable USB....\n");
 
   pid_t pid;
   GError *error_open = NULL;
-  char *command[] = {"/root/prufus/make_usb.sh", "/dev/sda",NULL};
+  char *command[] = {"/root/prufus/make_usb.sh", make_usb_data.iso_path,NULL};
   char *env[] = {(char*)0};
   gboolean result = g_spawn_async("/",command,env,
       G_SPAWN_CHILD_INHERITS_STDIN,NULL,NULL,&pid,&error_open);
@@ -58,8 +64,10 @@ select_file_result(GObject      *source_object,
 {
   GFile* my_iso = gtk_file_dialog_open_finish((GtkFileDialog*)source_object,res,NULL);
   char* my_iso_path = g_file_get_path(my_iso);
+  int iso_path_len = strlen(my_iso_path);
+  memcpy(make_usb_data.iso_path, my_iso_path, iso_path_len);
   g_print("chossed\n");
-  g_print(my_iso_path);
+  g_print(make_usb_data.iso_path);
   gtk_label_set_text((GtkLabel*)selected_iso_label,my_iso_path);
 
 }
@@ -157,7 +165,7 @@ activate (GtkApplication *app,
 
 
 
-  g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
+  g_signal_connect (button, "clicked", G_CALLBACK (make_usb), NULL);
   g_signal_connect (choose_iso_button, "clicked", G_CALLBACK (choose_iso), choose_iso_dialog);
   
   gtk_box_append (GTK_BOX (box), header_box);
