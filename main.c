@@ -3,10 +3,12 @@
 #include "glib.h"
 #include "glibconfig.h"
 #include <gtk/gtk.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 
 typedef struct Disk{
@@ -39,6 +41,15 @@ int disk_counter = 0;
 
 #define DISKS_INFO_OFFSET 60
 
+#define START '1'
+#define TEMP '2'
+#define MOUNT '3'
+#define COPY '4'
+#define COPY_BIG '5'
+#define SYNC '6'
+#define CLEAN '7'
+#define SUCCESS '8'
+
 typedef struct MakeUSB{
   char* device;
   char iso_path[100];
@@ -46,6 +57,62 @@ typedef struct MakeUSB{
 
 static MakeUSB make_usb_data;
 
+
+void * update_status(){
+  
+    int finished = 0;
+    while (finished != 1) {
+      int status_file_descriptor = open("/tmp/prufus/status", O_RDONLY);
+      if (status_file_descriptor == -1) {
+        g_print("Error open status file\n");
+        perror("Status:");
+      }
+      char status;
+      read(status_file_descriptor, &status, 1);
+      //printf("%c\n",status);
+      close(status_file_descriptor);
+
+      switch (status) {
+      case START: {
+          gtk_label_set_text((GtkLabel*)status_label,"Start");
+        break;
+      }
+      case TEMP: {
+          gtk_label_set_text((GtkLabel*)status_label,"Temporal files");
+        break;
+      }
+      case MOUNT: {
+          gtk_label_set_text((GtkLabel*)status_label,"Mounting");
+        break;
+      }
+      case COPY: {
+          gtk_label_set_text((GtkLabel*)status_label,"Copying files");
+        break;
+      }
+      case COPY_BIG: {
+          gtk_label_set_text((GtkLabel*)status_label,"Copying files....");
+        break;
+      }
+      case SYNC: {
+          gtk_label_set_text((GtkLabel*)status_label,"Syncronizing disks......");
+        break;
+      }
+      case CLEAN: {
+          gtk_label_set_text((GtkLabel*)status_label,"Cleaning");
+        break;
+      }
+      case SUCCESS: {
+          gtk_label_set_text((GtkLabel*)status_label,"Success! you can disconnect you USB");
+          finished = 1;
+        break;
+      }
+      }
+
+      usleep(500000);
+    }
+
+    printf("Success!!!\n");
+}
 
 static void
 begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data)
@@ -61,9 +128,10 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
     char *command[] = {"./make_usb.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
-    char *env[] = {(char *)0};
+    char *env[] = {NULL};
     gboolean result = g_spawn_async(
-        NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
+        NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL,
+        //NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
         NULL, NULL, &pid, &error_open);
     if (!result) {
       g_print("can't execute\n");
@@ -72,10 +140,15 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         g_error_free(error_open);
       }
     }
+  
+    pthread_t thread;
+    pthread_create( &thread,NULL,update_status,NULL);
+    
 
   } else {
     g_print("Choose other option\n");
   }
+  
 }
 
 static void make_usb (GtkWidget *widget, gpointer data)
