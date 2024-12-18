@@ -12,10 +12,10 @@ mount -t udf -o loop $1 /tmp/prufus/iso
 mount $2"1" /tmp/prufus/usb
 
 echo "Copying regular installtion files.."
-rsync -v -r -I --no-links --no-perms --no-owner --no-group --exclude sources/install.wim /tmp/prufus/iso /tmp/prufus/usb
+rsync -v -r -I --no-links --no-perms --no-owner --no-group --exclude sources/install.wim /tmp/prufus/iso/ /tmp/prufus/usb
 
 echo "Copying big installation file.."
-wimlib-imagex split /mnt/iso/sources/install.wim /mnt/prufus/sources/install.wim 1024
+wimlib-imagex split /tmp/prufus/iso/sources/install.wim /tmp/prufus/usb/sources/install.wim 1024
 
 echo "Syncronizing disk..."
 time(sync)
