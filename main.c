@@ -1,6 +1,7 @@
 #include "gio/gio.h"
 #include "glib-object.h"
 #include "glib.h"
+#include "glibconfig.h"
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +26,7 @@ GtkWidget* selected_iso_label;
 GtkWidget* disk_label;
 GtkWidget* devices_drop_down;
 GtkWidget *window;
+GtkWidget *status_label;
 
 Disk disks[10];
 Disk valid_disks[10];
@@ -154,6 +156,7 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
   gtk_widget_set_halign (box, GTK_ALIGN_FILL);
   gtk_widget_set_valign (box, GTK_ALIGN_FILL);
+  gtk_widget_set_hexpand(box,FALSE);
 
   header_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_set_halign (header_box, GTK_ALIGN_CENTER);
@@ -161,13 +164,13 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
 
   action_box= gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_set_halign (action_box, GTK_ALIGN_END);
-  gtk_widget_set_valign (action_box, GTK_ALIGN_END);
+  gtk_widget_set_valign (action_box, GTK_ALIGN_START);
+  gtk_widget_set_vexpand(action_box,TRUE);
 
   select_iso_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_widget_set_halign (select_iso_box, GTK_ALIGN_FILL);
   gtk_widget_set_valign (select_iso_box, GTK_ALIGN_FILL);
 
-  gtk_window_set_child (GTK_WINDOW (window), box);
 
   
   separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
@@ -180,6 +183,8 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   gtk_drop_down_set_factory(GTK_DROP_DOWN(select_iso_drop_down), NULL);
 
   selected_iso_label = gtk_label_new("None .iso selected");
+  
+  status_label = gtk_label_new("Nothing to do");
   
   //disk_label = gtk_label_new(buffer_disk_name);
 
@@ -243,6 +248,18 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
 
   //gtk_box_append (GTK_BOX (box), select_iso_drop_down);
   gtk_box_append (GTK_BOX (box), action_box);
+  
+  GtkWidget* status_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
+  gtk_widget_set_halign (status_box, GTK_ALIGN_START);
+  gtk_widget_set_valign (status_box, GTK_ALIGN_END);
+
+  gtk_box_append (GTK_BOX (status_box), status_label);
+
+  gtk_box_append (GTK_BOX (box), status_box);
+
+
+  
+  gtk_window_set_child (GTK_WINDOW (window), box);
 
   gtk_window_set_resizable(GTK_WINDOW(window),FALSE);
   gtk_window_present (GTK_WINDOW (window));
