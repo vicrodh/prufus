@@ -54,6 +54,7 @@ int disk_counter = 0;
 #define SUCCESS '8'
 
 bool can_update_status = true;
+bool can_update_working_status = true;
 
 typedef struct MakeUSB{
   char* device;
@@ -62,59 +63,82 @@ typedef struct MakeUSB{
 
 static MakeUSB make_usb_data;
 
+void * update_working_label(){
+  while(can_update_working_status == true){
+    gtk_label_set_text(GTK_LABEL(working_label),"..");
+    usleep(500000) ;
+    gtk_label_set_text(GTK_LABEL(working_label),"...");
+    usleep(500000) ;
+    gtk_label_set_text(GTK_LABEL(working_label),"....");
+    usleep(500000) ;
+    gtk_label_set_text(GTK_LABEL(working_label),".....");
+    usleep(500000) ;
+  }
+  gtk_label_set_text(GTK_LABEL(working_label),"");
+  g_print("Finish working label update\n");
+}
 
 void * update_status(){
-    usleep(500000) ;//wait for status file
-    while (can_update_status == true) {
-      int status_file_descriptor = open("/tmp/prufus/status", O_RDONLY);
-      if (status_file_descriptor == -1) {
-        g_print("Error open status file\n");
-        perror("Status:");
-      }
-      char status;
-      read(status_file_descriptor, &status, 1);
-      //printf("%c\n",status);
-      close(status_file_descriptor);
 
-      switch (status) {
-      case FORMAT: {
-          gtk_label_set_text((GtkLabel*)status_label,"Formating");
-        break;
-      }
-      case TEMP: {
-          gtk_label_set_text((GtkLabel*)status_label,"Creating temporal files");
-        break;
-      }
-      case MOUNT: {
-          gtk_label_set_text((GtkLabel*)status_label,"Mounting");
-        break;
-      }
-      case COPY: {
-          gtk_label_set_text((GtkLabel*)status_label,"Copying files");
-        break;
-      }
-      case COPY_BIG: {
-          gtk_label_set_text((GtkLabel*)status_label,"Copying files");
-        break;
-      }
-      case SYNC: {
-          gtk_label_set_text((GtkLabel*)status_label,"Syncronizing disks");
-        break;
-      }
-      case CLEAN: {
-          gtk_label_set_text((GtkLabel*)status_label,"Cleaning");
-        break;
-      }
-      case SUCCESS: {
-          gtk_label_set_text((GtkLabel*)status_label,"Success! you can disconnect you USB");
-          can_update_status = false;
-        break;
-      }
-      }
+  can_update_working_status = true;
+  pthread_t working_thread;
+  pthread_create(&working_thread, NULL, update_working_label, NULL);
 
-      usleep(500000);
+  usleep(500000); // wait for status file
+  while (can_update_status == true) {
+    int status_file_descriptor = open("/tmp/prufus/status", O_RDONLY);
+    if (status_file_descriptor == -1) {
+      g_print("Error open status file\n");
+      perror("Status:");
+    }
+    char status;
+    read(status_file_descriptor, &status, 1);
+    // printf("%c\n",status);
+    close(status_file_descriptor);
+
+    switch (status) {
+    case FORMAT: {
+      gtk_label_set_text((GtkLabel *)status_label, "Formating");
+      break;
+    }
+    case TEMP: {
+      gtk_label_set_text((GtkLabel *)status_label, "Creating temporal files");
+      break;
+    }
+    case MOUNT: {
+      gtk_label_set_text((GtkLabel *)status_label, "Mounting");
+      break;
+    }
+    case COPY: {
+      gtk_label_set_text((GtkLabel *)status_label, "Copying files");
+      break;
+    }
+    case COPY_BIG: {
+      gtk_label_set_text((GtkLabel *)status_label, "Copying files");
+      break;
+    }
+    case SYNC: {
+      gtk_label_set_text((GtkLabel *)status_label, "Syncronizing disks");
+      break;
+    }
+    case CLEAN: {
+      gtk_label_set_text((GtkLabel *)status_label, "Cleaning");
+      break;
+    }
+    case SUCCESS: {
+      gtk_label_set_text((GtkLabel *)status_label,
+                         "Success! you can disconnect you USB");
+      can_update_status = false;
+      can_update_working_status = false;
+      break;
+    }
     }
 
+    usleep(500000);
+    }
+
+    can_update_status = false;
+    can_update_working_status = false;
 
     printf("Finished status update\n");
 }
@@ -351,7 +375,7 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   gtk_widget_set_halign (status_box, GTK_ALIGN_START);
   gtk_widget_set_valign (status_box, GTK_ALIGN_START);
 
-  working_label = gtk_label_new("...");
+  working_label = gtk_label_new("");//empty
 
   gtk_box_append (GTK_BOX (status_label_box), status_label);
   gtk_box_append (GTK_BOX (status_label_box), working_label);
