@@ -43,7 +43,7 @@ int disk_counter = 0;
 
 #define DISKS_INFO_OFFSET 60
 
-#define START '1'
+#define FORMAT '1'
 #define TEMP '2'
 #define MOUNT '3'
 #define COPY '4'
@@ -76,12 +76,12 @@ void * update_status(){
       close(status_file_descriptor);
 
       switch (status) {
-      case START: {
-          gtk_label_set_text((GtkLabel*)status_label,"Start");
+      case FORMAT: {
+          gtk_label_set_text((GtkLabel*)status_label,"Formating");
         break;
       }
       case TEMP: {
-          gtk_label_set_text((GtkLabel*)status_label,"Temporal files");
+          gtk_label_set_text((GtkLabel*)status_label,"Creating temporal files");
         break;
       }
       case MOUNT: {
@@ -93,11 +93,11 @@ void * update_status(){
         break;
       }
       case COPY_BIG: {
-          gtk_label_set_text((GtkLabel*)status_label,"Copying files....");
+          gtk_label_set_text((GtkLabel*)status_label,"Copying files");
         break;
       }
       case SYNC: {
-          gtk_label_set_text((GtkLabel*)status_label,"Syncronizing disks......");
+          gtk_label_set_text((GtkLabel*)status_label,"Syncronizing disks");
         break;
       }
       case CLEAN: {
@@ -128,7 +128,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
     g_print("Formating....\n");
     GError *error_open = NULL;
-    char *command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
+    char *command[] = {"/root/prufus/make_usb.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};
@@ -230,6 +230,8 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   GtkWidget* separator;
 
   GtkWidget* cancel_button; 
+  
+  GtkWidget* change_name; 
 
   GtkFileDialog* choose_iso_dialog;
 
