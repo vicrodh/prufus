@@ -29,6 +29,7 @@ GtkWidget* disk_label;
 GtkWidget* devices_drop_down;
 GtkWidget *window;
 GtkWidget *status_label;
+GtkWidget *working_label;
 
 Disk disks[10];
 Disk valid_disks[10];
@@ -128,7 +129,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
     g_print("Formating....\n");
     GError *error_open = NULL;
-    char *command[] = {"/root/prufus/make_usb.sh", make_usb_data.iso_path,
+    char *command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};
@@ -346,7 +347,17 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   gtk_widget_set_halign (status_box, GTK_ALIGN_START);
   gtk_widget_set_valign (status_box, GTK_ALIGN_END);
 
-  gtk_box_append (GTK_BOX (status_box), status_label);
+  GtkWidget* status_label_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_halign (status_box, GTK_ALIGN_START);
+  gtk_widget_set_valign (status_box, GTK_ALIGN_START);
+
+  working_label = gtk_label_new("...");
+
+  gtk_box_append (GTK_BOX (status_label_box), status_label);
+  gtk_box_append (GTK_BOX (status_label_box), working_label);
+
+
+  gtk_box_append (GTK_BOX (status_box), status_label_box);
 
   gtk_box_append (GTK_BOX (box), status_box);
 
