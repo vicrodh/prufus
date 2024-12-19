@@ -30,6 +30,8 @@ GtkWidget* devices_drop_down;
 GtkWidget *window;
 GtkWidget *status_label;
 GtkWidget *working_label;
+GtkWidget *create_usb_button;
+GtkWidget *choose_iso_button;
 
 Disk disks[10];
 Disk valid_disks[10];
@@ -139,6 +141,10 @@ void * update_status(){
 
     can_update_status = false;
     can_update_working_status = false;
+  
+    gtk_widget_set_sensitive(create_usb_button, TRUE);
+    gtk_widget_set_sensitive(choose_iso_button, TRUE);
+  gtk_button_set_label(GTK_BUTTON(create_usb_button), "Create booteable USB");
 
     printf("Finished status update\n");
 }
@@ -146,6 +152,11 @@ void * update_status(){
 static void
 begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
+  
+  gtk_widget_set_sensitive(create_usb_button, FALSE);
+  gtk_button_set_label(GTK_BUTTON(create_usb_button), "Working");
+  gtk_widget_set_sensitive(choose_iso_button, FALSE);
+
 
   int result = gtk_alert_dialog_choose_finish(user_data, res, NULL);
   if (result == 0) {
@@ -241,8 +252,6 @@ static void choose_iso(GtkWidget *widget, gpointer data)
 
 static void create_user_interface (GtkApplication *app, gpointer user_data)
 {
-  GtkWidget *create_usb_button;
-  GtkWidget *choose_iso_button;
   GtkWidget *box;
   GtkWidget* title;
   GtkWidget* description;
