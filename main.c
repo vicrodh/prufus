@@ -52,6 +52,8 @@ int disk_counter = 0;
 #define CLEAN '7'
 #define SUCCESS '8'
 
+bool can_update_status = true;
+
 typedef struct MakeUSB{
   char* device;
   char iso_path[100];
@@ -62,8 +64,7 @@ static MakeUSB make_usb_data;
 
 void * update_status(){
     usleep(500000) ;//wait for status file
-    int finished = 0;
-    while (finished != 1) {
+    while (can_update_status == true) {
       int status_file_descriptor = open("/tmp/prufus/status", O_RDONLY);
       if (status_file_descriptor == -1) {
         g_print("Error open status file\n");
@@ -105,7 +106,7 @@ void * update_status(){
       }
       case SUCCESS: {
           gtk_label_set_text((GtkLabel*)status_label,"Success! you can disconnect you USB");
-          finished = 1;
+          can_update_status = false;
         break;
       }
       }
@@ -113,7 +114,8 @@ void * update_status(){
       usleep(500000);
     }
 
-    printf("Success!!!\n");
+
+    printf("Finished status update\n");
 }
 
 static void
@@ -141,7 +143,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         g_error_free(error_open);
       }
     }
-  
+    can_update_status = true; 
     pthread_t thread;
     pthread_create( &thread,NULL,update_status,NULL);
     
@@ -156,6 +158,11 @@ static void cancel(GtkWidget *widget, gpointer data)
 {
   g_print("cancel!\n");
 
+  kill(make_usb_pid,9);
+
+  can_update_status = false;
+
+  gtk_label_set_text(GTK_LABEL(status_label),"Canceled!");
 }
 
 static void make_usb (GtkWidget *widget, gpointer data)
