@@ -32,6 +32,7 @@ GtkWidget *status_label;
 GtkWidget *working_label;
 GtkWidget *create_usb_button;
 GtkWidget *choose_iso_button;
+GtkWidget *cancel_button;
 
 Disk disks[10];
 Disk valid_disks[10];
@@ -144,7 +145,7 @@ void * update_status(){
   
     gtk_widget_set_sensitive(create_usb_button, TRUE);
     gtk_widget_set_sensitive(choose_iso_button, TRUE);
-  gtk_button_set_label(GTK_BUTTON(create_usb_button), "Create booteable USB");
+    gtk_button_set_label(GTK_BUTTON(create_usb_button), "Create booteable USB");
 
     printf("Finished status update\n");
 }
@@ -156,6 +157,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
   gtk_widget_set_sensitive(create_usb_button, FALSE);
   gtk_button_set_label(GTK_BUTTON(create_usb_button), "Working");
   gtk_widget_set_sensitive(choose_iso_button, FALSE);
+  gtk_widget_set_sensitive(cancel_button, TRUE);
 
 
   int result = gtk_alert_dialog_choose_finish(user_data, res, NULL);
@@ -199,6 +201,7 @@ static void cancel(GtkWidget *widget, gpointer data)
   can_update_status = false;
 
   gtk_label_set_text(GTK_LABEL(status_label),"Canceled!");
+  gtk_widget_set_sensitive(cancel_button, FALSE);
 }
 
 static void make_usb (GtkWidget *widget, gpointer data)
@@ -263,7 +266,6 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
 
   GtkWidget* separator;
 
-  GtkWidget* cancel_button; 
   
   GtkWidget* change_name; 
 
@@ -316,6 +318,7 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   choose_iso_button = gtk_button_new_with_label ("Select .iso");
 
   cancel_button = gtk_button_new_with_label ("Cancel");
+  gtk_widget_set_sensitive(cancel_button, FALSE);//disabled on start
 
   title = gtk_label_new("prufus");
   PangoAttrList *const Attrs = pango_attr_list_new();
@@ -346,7 +349,6 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   gtk_box_append (GTK_BOX (header_box), title);
   gtk_box_append (GTK_BOX (header_box), description);
   gtk_box_append (GTK_BOX (action_box), create_usb_button);
-  gtk_box_append (GTK_BOX (action_box), cancel_button);
   
   gtk_box_append (GTK_BOX (select_iso_box), choose_iso_button);
   gtk_box_append (GTK_BOX (select_iso_box), selected_iso_label);
@@ -377,18 +379,29 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   gtk_box_append (GTK_BOX (box), action_box);
   
   GtkWidget* status_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
-  gtk_widget_set_halign (status_box, GTK_ALIGN_START);
+  gtk_widget_set_halign (status_box, GTK_ALIGN_FILL);
   gtk_widget_set_valign (status_box, GTK_ALIGN_END);
 
   GtkWidget* status_label_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-  gtk_widget_set_halign (status_box, GTK_ALIGN_START);
-  gtk_widget_set_valign (status_box, GTK_ALIGN_START);
+  gtk_widget_set_valign (status_label_box, GTK_ALIGN_FILL);
+  gtk_widget_set_halign (status_label_box, GTK_ALIGN_FILL);
+
+  GtkWidget* cancel_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_halign (cancel_box, GTK_ALIGN_END);
+  gtk_widget_set_valign (cancel_box, GTK_ALIGN_END);
+  
 
   working_label = gtk_label_new("");//empty
 
   gtk_box_append (GTK_BOX (status_label_box), status_label);
   gtk_box_append (GTK_BOX (status_label_box), working_label);
+  
+  gtk_box_append (GTK_BOX (status_box), cancel_box);
 
+  gtk_box_append (GTK_BOX (cancel_box), cancel_button);
+
+  gtk_box_append (GTK_BOX (cancel_box), cancel_button);
+  
 
   gtk_box_append (GTK_BOX (status_box), status_label_box);
 
