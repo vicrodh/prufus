@@ -25,6 +25,8 @@ echo $fdisk_size
 
 printf "n\n\n\n$fdisk_size\nt\n1\nw\n" | fdisk -w always -W always $2
 
+mkfs.fat $2"1"
+
 echo 8 > /tmp/prufus/status
 
 
