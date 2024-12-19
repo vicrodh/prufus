@@ -1,9 +1,11 @@
 #!/bin/sh
 echo "Creating usb...."
 
+sleep 1
+
 mkdir -p /tmp/prufus
 #if already exist clean first
-rm -rf /tmp/prufus/*
+rm -rf /tmp/prufus/status
 
 echo 1 > /tmp/prufus/status
 
@@ -12,35 +14,41 @@ echo $2
 
 echo "Creating temporal directories.."
 echo 2 > /tmp/prufus/status
+
 mkdir -p /tmp/prufus/iso
 mkdir -p /tmp/prufus/usb
 
+sleep 1
+
 echo "Mounting USB and ISO"
 echo 3 > /tmp/prufus/status
-mount -t udf -o loop $1 /tmp/prufus/iso
-mount $2"1" /tmp/prufus/usb
 
-rm -r /tmp/prufus/usb/* #temporal format
+sleep 1
 
 echo "Copying regular installtion files.."
 echo 4 > /tmp/prufus/status
-rsync -v -r -I --no-links --no-perms --no-owner --no-group --exclude sources/install.wim /tmp/prufus/iso/ /tmp/prufus/usb
+
+sleep 2
+
 
 echo "Copying big installation file.."
 echo 5 > /tmp/prufus/status
-wimlib-imagex split /tmp/prufus/iso/sources/install.wim /tmp/prufus/usb/sources/install.wim 1024
+
+
+sleep 5
 
 echo "Syncronizing disk..."
 echo 6 > /tmp/prufus/status
-time(sync)
+
+sleep 10
 
 echo "Synconization done"
 
 
 echo "Cleaning..."
 echo 7 > /tmp/prufus/status
-umount /tmp/prufus/iso
-umount /tmp/prufus/usb
+
+sleep 1
 
 echo "Booteable USB created!"
 echo 8 > /tmp/prufus/status

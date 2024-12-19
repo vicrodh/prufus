@@ -33,6 +33,8 @@ GtkWidget *status_label;
 Disk disks[10];
 Disk valid_disks[10];
 
+pid_t make_usb_pid;
+
 int disk_counter = 0;
 #define NAME    1
 #define DEVICE  2
@@ -59,7 +61,7 @@ static MakeUSB make_usb_data;
 
 
 void * update_status(){
-  
+    usleep(500000) ;//wait for status file
     int finished = 0;
     while (finished != 1) {
       int status_file_descriptor = open("/tmp/prufus/status", O_RDONLY);
@@ -123,16 +125,15 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
     guint select_device_index =
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
     g_print("Formating....\n");
-    pid_t pid;
     GError *error_open = NULL;
-    char *command[] = {"./make_usb.sh", make_usb_data.iso_path,
+    char *command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};
     gboolean result = g_spawn_async(
-        NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL,
-        //NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
-        NULL, NULL, &pid, &error_open);
+        //NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL,
+        NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
+        NULL, NULL, &make_usb_pid, &error_open);
     if (!result) {
       g_print("can't execute\n");
       if (error_open != NULL) {
@@ -149,6 +150,12 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
     g_print("Choose other option\n");
   }
   
+}
+
+static void cancel(GtkWidget *widget, gpointer data)
+{
+  g_print("cancel!\n");
+
 }
 
 static void make_usb (GtkWidget *widget, gpointer data)
@@ -202,7 +209,7 @@ static void choose_iso(GtkWidget *widget, gpointer data)
 
 static void create_user_interface (GtkApplication *app, gpointer user_data)
 {
-  GtkWidget *button;
+  GtkWidget *create_usb_button;
   GtkWidget *choose_iso_button;
   GtkWidget *box;
   GtkWidget* title;
@@ -215,7 +222,7 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
 
   GtkWidget* separator;
 
-  
+  GtkWidget* cancel_button; 
 
   GtkFileDialog* choose_iso_dialog;
 
@@ -262,8 +269,10 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   //disk_label = gtk_label_new(buffer_disk_name);
 
   //create UI
-  button = gtk_button_new_with_label ("Create booteable USB");
+  create_usb_button = gtk_button_new_with_label ("Create booteable USB");
   choose_iso_button = gtk_button_new_with_label ("Select .iso");
+
+  cancel_button = gtk_button_new_with_label ("Cancel");
 
   title = gtk_label_new("prufus");
   PangoAttrList *const Attrs = pango_attr_list_new();
@@ -285,14 +294,16 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
 
 
 
-  g_signal_connect (button, "clicked", G_CALLBACK (make_usb), NULL);
+  g_signal_connect (cancel_button, "clicked", G_CALLBACK (cancel), NULL);
+  g_signal_connect (create_usb_button, "clicked", G_CALLBACK (make_usb), NULL);
   g_signal_connect (choose_iso_button, "clicked", G_CALLBACK (choose_iso), choose_iso_dialog);
   
   gtk_box_append (GTK_BOX (box), header_box);
 
   gtk_box_append (GTK_BOX (header_box), title);
   gtk_box_append (GTK_BOX (header_box), description);
-  gtk_box_append (GTK_BOX (action_box), button);
+  gtk_box_append (GTK_BOX (action_box), create_usb_button);
+  gtk_box_append (GTK_BOX (action_box), cancel_button);
   
   gtk_box_append (GTK_BOX (select_iso_box), choose_iso_button);
   gtk_box_append (GTK_BOX (select_iso_box), selected_iso_label);
