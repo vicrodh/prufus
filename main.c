@@ -1,9 +1,11 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <time.h>
+
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "glib.h"
 #include "gtk/gtk.h"
 #include "scripts_names.h"
 #include "user_interface.h"
@@ -129,10 +131,12 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
     GError *error_open = NULL;
     char *make_usb_command[] = {make_usb_script, make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
+    
+    char* current_directory = g_get_current_dir();
 
     char *env[] = {NULL};
     gboolean result = g_spawn_async(
-        NULL, make_usb_command, env, 
+        current_directory, make_usb_command, env, 
         G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
         //G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL, //hide make script log
         NULL, NULL, &make_usb_pid, &error_open);
