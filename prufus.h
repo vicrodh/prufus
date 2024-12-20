@@ -28,10 +28,21 @@ typedef struct MakeUSB{
   char iso_path[100];
 } MakeUSB ;
 
+typedef struct Disk{
+  char name[40];
+  char device[20];
+  char size[20];
+} Disk;
+
+extern Disk disks[];
+extern Disk valid_disks[];
+
 extern char buffer_disks_info[];
 
 extern char* devices_info[];
 
 extern int disk_counter;
+
+void get_usb_disks();
 
 #endif
