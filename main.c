@@ -34,6 +34,9 @@ GtkWidget *create_usb_button;
 GtkWidget *choose_iso_button;
 GtkWidget *cancel_button;
 
+GtkAlertDialog *write_usb_warning;
+GtkAlertDialog *success_alert;
+
 Disk disks[10];
 Disk valid_disks[10];
 
@@ -142,6 +145,8 @@ void * update_status(){
 
     can_update_status = false;
     can_update_working_status = false;
+
+    gtk_alert_dialog_show(success_alert,GTK_WINDOW(window));
   
     gtk_widget_set_sensitive(create_usb_button, TRUE);
     gtk_widget_set_sensitive(choose_iso_button, TRUE);
@@ -166,7 +171,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
     g_print("Formating....\n");
     GError *error_open = NULL;
-    char *command[] = {"/root/prufus/make_usb.sh", make_usb_data.iso_path,
+    char *command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};
@@ -211,7 +216,7 @@ static void make_usb (GtkWidget *widget, gpointer data)
   guint select_device_index = 
     gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
 
-  GtkAlertDialog *write_usb_warning = gtk_alert_dialog_new(
+  write_usb_warning = gtk_alert_dialog_new(
       "WARNING! All data will be lost\n ISO Image: %s\n USB: %s %s",
       make_usb_data.iso_path,valid_disks[select_device_index].name, 
       valid_disks[select_device_index].size);
@@ -412,6 +417,12 @@ static void create_user_interface (GtkApplication *app, gpointer user_data)
   gtk_window_set_child (GTK_WINDOW (window), box);
 
   gtk_window_set_resizable(GTK_WINDOW(window),FALSE);
+
+  //success dialog
+  
+  success_alert = gtk_alert_dialog_new("Success, now you can disconnect you USB!");
+
+
   gtk_window_present (GTK_WINDOW (window));
 }
 
