@@ -9,7 +9,7 @@ on:
 jobs:
   build-and-package:
     name: Build and Package for Linux
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
 
     steps:
       - name: Checkout repository
@@ -17,9 +17,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libgtk-4-dev libglib2.0-dev \
-            checkinstall rpm devscripts fakeroot
+          sudo dnf update -y
+          sudo dnf install -y gcc gcc-c++ make gtk4-devel glib2-devel \
+            rpm-build fakeroot tar wget
 
       - name: Build application
         run: |
@@ -30,13 +30,6 @@ jobs:
         run: |
           mkdir -p dist
           tar -czvf dist/prufus.tar.gz --transform 's,^,prufus/,' .
-
-      - name: Create DEB package
-        run: |
-          sudo checkinstall --type=debian --install=no \
-            --pkgname=prufus --pkgversion=1.0.0 --pkgrelease=1 --pkglicense=MIT \
-            --maintainer="Your Name <youremail@example.com>" \
-            --pakdir=dist make install
 
       - name: Create RPM package
         run: |
