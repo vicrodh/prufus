@@ -23,9 +23,19 @@ final_size="$(($iso_size+(1024*1024)))" #we add 1GiB for using
 fdisk_size="+$final_size""K"
 echo $fdisk_size
 
-printf "n\n\n\n$fdisk_size\nt\n1\nw\n" | fdisk -w always -W always $2
+printf "n\n\n\n$fdisk_size\nt\n1\nw\n" | fdisk -w always -W always $2 #EFI partition
+sleep 1 #wait for kernel update
+
+printf "n\n2\n\n\nt\n2\n11\nw\n" | fdisk $2 #NTFS partition
+sync
+
+fatlabel $2"1" "WINDOWS"
+
+ntfslabel $2"2" "Data"
 
 mkfs.fat $2"1"
+mkfs.ntfs -Q $2"2"
+
 
 echo 8 > /tmp/prufus/status
 

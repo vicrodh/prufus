@@ -166,7 +166,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
     g_print("Formating....\n");
     GError *error_open = NULL;
-    char *command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
+    char *command[] = {"/root/prufus/make_usb.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};
