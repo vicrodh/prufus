@@ -124,20 +124,20 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
   if (result == 0) {
     guint select_device_index =
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
-    g_print("Formating....\n");
+
     GError *error_open = NULL;
-    char *command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
+    char *make_usb_command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};
     gboolean result = g_spawn_async(
-        //NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL,
-        NULL, command, env, G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
+        NULL, make_usb_command, env, 
+        G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
+        //G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL, //hide make script log
         NULL, NULL, &make_usb_pid, &error_open);
     if (!result) {
-      g_print("can't execute\n");
       if (error_open != NULL) {
-        g_print("error executing %s\n", error_open->message);
+        g_print("Error %s\n", error_open->message);
         g_error_free(error_open);
       }
     }
@@ -154,7 +154,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
 
 void cancel(GtkWidget *widget, gpointer data)
 {
-  g_print("cancel!\n");
+  g_print("Cancel!\n");
 
   kill(make_usb_pid,9);
 
@@ -166,7 +166,6 @@ void cancel(GtkWidget *widget, gpointer data)
 
 void make_usb(GtkWidget *widget, gpointer data)
 {
-  
 
   guint select_device_index = 
     gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
@@ -175,34 +174,29 @@ void make_usb(GtkWidget *widget, gpointer data)
       "WARNING! All data will be lost\n ISO Image: %s\n USB: %s %s",
       make_usb_data.iso_path,valid_disks[select_device_index].name, 
       valid_disks[select_device_index].size);
-  
+
   const char * const dialog_buttons[] = {"I'm sure", "Cancel",NULL};
 
   gtk_alert_dialog_set_buttons(write_usb_warning,dialog_buttons);
-
-
-
+ 
   gtk_alert_dialog_choose(write_usb_warning,
       GTK_WINDOW(window),NULL, begin_usb_creation, write_usb_warning);
-
 
 }
 
 static void
 select_file_result(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-  GFile* my_iso = gtk_file_dialog_open_finish((GtkFileDialog*)source_object,res,NULL);
-  char* my_iso_path = g_file_get_path(my_iso);
-  int iso_path_len = strlen(my_iso_path);
+  GFile* selected_iso_file = gtk_file_dialog_open_finish((GtkFileDialog*)source_object,res,NULL);
+  char* selected_iso_path = g_file_get_path(selected_iso_file);
+  int iso_path_len = strlen(selected_iso_path);
 
   //clean iso path firstly
   memset(make_usb_data.iso_path,0,sizeof(make_usb_data.iso_path));
 
-  memcpy(make_usb_data.iso_path, my_iso_path, iso_path_len);
-  g_print("chossed\n");
-  g_print(make_usb_data.iso_path);
-  g_print("\n");
-  gtk_label_set_text((GtkLabel*)selected_iso_label,my_iso_path);
+  memcpy(make_usb_data.iso_path, selected_iso_path, iso_path_len);
+
+  gtk_label_set_text(GTK_LABEL(selected_iso_label),make_usb_data.iso_path);
 
 }
 
