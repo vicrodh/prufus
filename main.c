@@ -5,9 +5,10 @@
 #include <fcntl.h>
 
 #include "gtk/gtk.h"
+#include "scripts_names.h"
 #include "user_interface.h"
 #include "prufus.h"
-
+#include "scripts_names.h"
 
 char* devices_info[10];
 
@@ -126,7 +127,7 @@ begin_usb_creation(GObject *source_object, GAsyncResult *res, gpointer user_data
         gtk_drop_down_get_selected(GTK_DROP_DOWN(devices_drop_down));
 
     GError *error_open = NULL;
-    char *make_usb_command[] = {"/root/prufus/simulate.sh", make_usb_data.iso_path,
+    char *make_usb_command[] = {make_usb_script, make_usb_data.iso_path,
                        valid_disks[select_device_index].device, NULL};
 
     char *env[] = {NULL};

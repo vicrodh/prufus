@@ -1,6 +1,8 @@
 #include <string.h>
 #include "prufus.h"
 
+#include "scripts_names.h"
+
 char buffer_disks_info[60*10];
 
 char buffer_disk_name[128];
@@ -59,7 +61,7 @@ void get_string_from_file(FILE *script_file) {
 
 void get_usb_disks(){
     FILE *script_file;
-    script_file = popen("/root/prufus/get_device_name.sh", "r");
+    script_file = popen(get_devices_names_script, "r");
 
     get_string_from_file(script_file); 
     get_string(NAME);
@@ -67,13 +69,13 @@ void get_usb_disks(){
     pclose(script_file);
   
 
-    script_file = popen("/root/prufus/get_devices.sh", "r");
+    script_file = popen(get_devices_script, "r");
 
     get_string_from_file(script_file); 
     get_string(DEVICE);
     pclose(script_file);
 
-    script_file = popen("/root/prufus/get_sizes.sh", "r");
+    script_file = popen(get_devices_size_script, "r");
 
     get_string_from_file(script_file); 
     get_string(SIZE);
