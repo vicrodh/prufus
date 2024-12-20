@@ -91,7 +91,7 @@ void * update_status(){
       break;
     }
     case SUCCESS: {
-      set_status_text("Success!, you can disconnect you USB");
+      set_status_text("Success!, you can disconnect your USB");
       can_update_status = false;
       can_update_working_status = false;
       break;
@@ -108,7 +108,7 @@ void * update_status(){
   
     gtk_widget_set_sensitive(create_usb_button, TRUE);
     gtk_widget_set_sensitive(choose_iso_button, TRUE);
-    gtk_button_set_label(GTK_BUTTON(create_usb_button), "Create booteable USB");
+    gtk_button_set_label(GTK_BUTTON(create_usb_button), "Create bootable USB");
 
     printf("Finished status update\n");
 }

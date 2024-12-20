@@ -76,7 +76,7 @@ void create_user_interface(GtkApplication *app, gpointer user_data)
   //disk_label = gtk_label_new(buffer_disk_name);
 
   //create UI
-  create_usb_button = gtk_button_new_with_label ("Create booteable USB");
+  create_usb_button = gtk_button_new_with_label ("Create bootable USB");
   choose_iso_button = gtk_button_new_with_label ("Select .iso");
 
   cancel_button = gtk_button_new_with_label ("Cancel");
@@ -88,7 +88,7 @@ void create_user_interface(GtkApplication *app, gpointer user_data)
   pango_attr_list_insert(Attrs, SizeAttr);
   gtk_label_set_attributes((GtkLabel*)title,Attrs);
 
-  description = gtk_label_new("Create booteable USB from .iso images");
+  description = gtk_label_new("Create bootable USB from .iso images");
 
 
   //create drop down with devices names and sizes
@@ -177,7 +177,7 @@ void create_user_interface(GtkApplication *app, gpointer user_data)
 
   //success dialog
   
-  success_alert = gtk_alert_dialog_new("Success, now you can disconnect you USB!");
+  success_alert = gtk_alert_dialog_new("Success, now you can disconnect your USB!");
 
 
   gtk_window_present (GTK_WINDOW (window));
