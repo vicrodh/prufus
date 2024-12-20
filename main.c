@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "gtk/gtk.h"
 #include "user_interface.h"
 #include "prufus.h"
 
@@ -36,6 +37,10 @@ void * update_working_label(){
   g_print("Finish working label update\n");
 }
 
+void set_status_text(char* status){
+  gtk_label_set_text(GTK_LABEL(status_label), status);
+}
+
 void * update_status(){
 
   can_update_working_status = true;
@@ -51,41 +56,39 @@ void * update_status(){
     }
     char status;
     read(status_file_descriptor, &status, 1);
-    // printf("%c\n",status);
     close(status_file_descriptor);
 
     switch (status) {
     case FORMAT: {
-      gtk_label_set_text((GtkLabel *)status_label, "Formating");
+      set_status_text("Formating");
       break;
     }
     case TEMP: {
-      gtk_label_set_text((GtkLabel *)status_label, "Creating temporal files");
+      set_status_text("Creating temporal files");
       break;
     }
     case MOUNT: {
-      gtk_label_set_text((GtkLabel *)status_label, "Mounting");
+      set_status_text("Mounting");
       break;
     }
     case COPY: {
-      gtk_label_set_text((GtkLabel *)status_label, "Copying files");
+      set_status_text("Copying files");
       break;
     }
     case COPY_BIG: {
-      gtk_label_set_text((GtkLabel *)status_label, "Copying files");
+      set_status_text("Copying files");
       break;
     }
     case SYNC: {
-      gtk_label_set_text((GtkLabel *)status_label, "Syncronizing disks");
+      set_status_text("Syncronizing disks");
       break;
     }
     case CLEAN: {
-      gtk_label_set_text((GtkLabel *)status_label, "Cleaning");
+      set_status_text("Cleaning");
       break;
     }
     case SUCCESS: {
-      gtk_label_set_text((GtkLabel *)status_label,
-                         "Success! you can disconnect you USB");
+      set_status_text("Success!, you can disconnect you USB");
       can_update_status = false;
       can_update_working_status = false;
       break;
