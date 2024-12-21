@@ -1,3 +1,7 @@
 /prufus
 /usb_validator.o
 /user_interface.o
+
+.idea/editor.xml
+
+.idea/misc.xml
